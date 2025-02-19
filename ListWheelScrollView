@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('ListWheelScrollView Example'),
+        ),
+        body: MonthSelector(),
+      ),
+    );
+  }
+}
+
+class MonthSelector extends StatefulWidget {
+  @override
+  _MonthSelectorState createState() => _MonthSelectorState();
+}
+
+class _MonthSelectorState extends State<MonthSelector> {
+  int selectedIndex = 0; // Track the selected item index
+
+  final List<String> months = [
+    "January","February","March","April","May","June","July","August","September","October","November","December"
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ListWheelScrollView(
+        itemExtent: 100, // Height of each item
+        diameterRatio: 2.0, // Curvature adjustment
+        physics: FixedExtentScrollPhysics(), // Smooth scrolling
+        onSelectedItemChanged: (index) {
+          setState(() {
+            selectedIndex = index; // Update the selected index dynamically
+          });
+        },
+        children: List.generate(months.length, (index) {
+          return Center(
+            child: Container(
+              height: 80,
+              width: 200,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: index == selectedIndex ? Colors.blue : Colors.transparent,
+                  width: 2.0,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                months[index],
+                style: TextStyle(fontSize: 24),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
