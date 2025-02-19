@@ -1,0 +1,181 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:liquid_swipe/liquid_swipe.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.light,
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  final List<String> _items = List.generate(10, (index) => 'Item ${index + 1}');
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  int selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = [
+      // ReorderableListView Page
+      Container(
+        color: Colors.blue[100],
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text(
+              'ReorderableListView',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ReorderableListView(
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final item = _items.removeAt(oldIndex);
+                    _items.insert(newIndex, item);
+                  });
+                },
+                children: _items.map((item) => ListTile(
+                  key: ValueKey(item),
+                  title: Text(item),
+                  trailing: const Icon(Icons.drag_handle),
+                )).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      // ListWheelScrollView Page
+      Container(
+        color: Colors.orange[100],
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text(
+              'ListWheelScrollView',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListWheelScrollView.useDelegate(
+                itemExtent: 75,
+                perspective: 0.001,
+                diameterRatio: 1.5,
+                physics: const FixedExtentScrollPhysics(),
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    selectedIndex = index;
+                  });
+                  HapticFeedback.mediumImpact();
+                },
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: _items.length,
+                  builder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: selectedIndex == index ? Colors.blue[50] : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          _items[index],
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: selectedIndex == index ? FontWeight.bold : FontWeight.w500,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _removeItem(index),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    return Scaffold(
+      body: LiquidSwipe(
+        pages: pages,
+        enableLoop: true,
+        fullTransitionValue: 300,
+        enableSideReveal: true,
+        waveType: WaveType.circularReveal,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addItem,
+        foregroundColor: Colors.black,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _addItem() {
+    setState(() {
+      final newIndex = _items.length;
+      _items.add('Item ${newIndex + 1}');
+      _listKey.currentState?.insertItem(newIndex);
+    });
+  }
+
+  void _removeItem(int index) {
+    if (index < 0 || index >= _items.length) return;
+    
+    final removedItem = _items[index];
+    setState(() {
+      _items.removeAt(index);
+      _listKey.currentState?.removeItem(
+        index,
+        (context, animation) => SizeTransition(
+          sizeFactor: animation,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.red[50],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ListTile(
+              title: Text(removedItem),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
