@@ -1,0 +1,77 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(const AnimatedListApp());
+
+class AnimatedListApp extends StatelessWidget {
+  const AnimatedListApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(title: const Text('AnimatedList Example')),
+        body: const AnimatedListExample(),
+      ),
+    );
+  }
+}
+
+class AnimatedListExample extends StatefulWidget {
+  const AnimatedListExample({super.key});
+
+  @override
+  State<AnimatedListExample> createState() => _AnimatedListExampleState();
+}
+
+class _AnimatedListExampleState extends State<AnimatedListExample> {
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final List<String> _items = ['Item 1', 'Item 2', 'Item 3', 'Item 4'];
+
+  void _addItem() {
+    _items.insert(0, 'New Item');
+    _listKey.currentState?.insertItem(0);
+  }
+
+  void _removeItem(int index) {
+    final removedItem = _items.removeAt(index);
+    _listKey.currentState?.removeItem(
+      index,
+      (context, animation) => _buildItem(removedItem, animation),
+    );
+  }
+
+  Widget _buildItem(String item, Animation<double> animation) {
+    return SizeTransition(
+      sizeFactor: animation,
+      child: ListTile(
+        title: Text(item),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: () => _removeItem(_items.indexOf(item)),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: _addItem,
+          child: const Text('Add Item'),
+        ),
+        Expanded(
+          child: AnimatedList(
+            key: _listKey,
+            initialItemCount: _items.length,
+            itemBuilder: (context, index, animation) {
+              return _buildItem(_items[index], animation);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
